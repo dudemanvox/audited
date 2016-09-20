@@ -21,6 +21,7 @@ module Audited
 
         scope :state_changes, ->{ where( "`audit_type` LIKE '%status%'" ) }
         scope :system_audit, ->{ where( audit_type: "SystemAudit" ) }
+        scope :as_admin, ->{ where( "`admin_id` IS NOT null AND `admin_type` = 'User'" ) }
       end
 
       # Returns the list of classes that are being audited
