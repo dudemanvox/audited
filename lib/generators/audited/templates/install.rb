@@ -5,9 +5,11 @@ class <%= migration_class_name %> < ActiveRecord::Migration
       t.column :auditable_type, :string
       t.column :associated_id, :integer
       t.column :associated_type, :string
-      t.column :audit_tyoe, :string
+      t.column :audit_type, :string
       t.column :user_id, :integer
       t.column :user_type, :string
+      t.column :admin_id, :integer
+      t.column :admin_type, :string
       t.column :username, :string
       t.column :action, :string
       t.column :audited_changes, :text
