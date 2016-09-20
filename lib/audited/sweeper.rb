@@ -13,11 +13,16 @@ module Audited
 
     def before_create(audit)
       audit.user ||= current_user
+      audit.admin ||= current_admin
       audit.remote_address = controller.try(:request).try(:ip)
     end
 
     def current_user
       controller.send(Audited.current_user_method) if controller.respond_to?(Audited.current_user_method, true)
+    end
+
+    def current_admin
+      controller.send(Audited.current_admin_method) if controller.respond_to?(Audited.current_admin_method, true)
     end
 
     def add_observer!(klass)
