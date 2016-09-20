@@ -66,8 +66,11 @@ module Audited
         end
 
         attr_accessor :audit_comment
+        attr_accessor :action_type
+
         unless options[:allow_mass_assignment]
           attr_accessible :audit_comment
+          attr_accessible :action_type
         end
 
         has_many :audits, :as => :auditable, :class_name => Audited.audit_class.name
@@ -195,19 +198,19 @@ module Audited
 
       def audit_create
         write_audit(:action => 'create', :audited_changes => audited_attributes,
-                    :comment => audit_comment)
+                    :comment => audit_comment, :audit_type => self.action_type)
       end
 
       def audit_update
         unless (changes = audited_changes).empty? && audit_comment.blank?
           write_audit(:action => 'update', :audited_changes => changes,
-                      :comment => audit_comment)
+                      :comment => audit_comment, :audit_type => self.action_type)
         end
       end
 
       def audit_destroy
         write_audit(:action => 'destroy', :audited_changes => audited_attributes,
-                    :comment => audit_comment)
+                    :comment => audit_comment, :audit_type => self.action_type)
       end
 
       def write_audit(attrs)
