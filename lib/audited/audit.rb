@@ -9,14 +9,18 @@ module Audited
       def setup_audit
         belongs_to :auditable,  :polymorphic => true
         belongs_to :user,       :polymorphic => true
+        belongs_to :admin,      :polymorphic => true
         belongs_to :associated, :polymorphic => true
 
-        before_create :set_version_number, :set_audit_user
+        before_create :set_version_number, :set_audit_user, :check_audit_type
 
         cattr_accessor :audited_class_names
         self.audited_class_names = Set.new
 
-        attr_accessible :action, :audited_changes, :comment, :associated
+        attr_accessible :action, :audited_changes, :comment, :associated, :audit_type
+
+        scope :state_changes, ->{ where( "`audit_type` LIKE '%status%'" ) }
+        scope :system_audit, ->{ where( audit_type: "SystemAudit" ) }
       end
 
       # Returns the list of classes that are being audited
@@ -98,5 +102,16 @@ module Audited
       self.user = Thread.current[:audited_user] if Thread.current[:audited_user]
       nil # prevent stopping callback chains
     end
+
+    # If this is an audit resulting from a state machine transition, mark it as a status change.
+    def check_audit_type
+      return self.audit_type if self.audit_type
+
+      changed_attrs = old_attributes.keys.select{|k| k.to_s.match(/status/i)} + new_attributes.keys.select{|k| k.to_s.match(/status/i) }
+      if changed_attrs.count > 0
+        self.audit_type = changed_attrs.first.to_s.camelize
+      end
+    end
+
   end
 end
