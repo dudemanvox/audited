@@ -66,10 +66,12 @@ module Audited
         end
 
         attr_accessor :audit_comment
-        attr_accessor :action_type
+        attr_accessor :state_change
+        attr_writer   :action_type
 
         unless options[:allow_mass_assignment]
           attr_accessible :audit_comment
+          attr_accessible :state_change
           attr_accessible :action_type
         end
 
@@ -99,6 +101,12 @@ module Audited
     end
 
     module AuditedInstanceMethods
+
+      # Returns the default audit_tyoe or the value which has been set.
+      def action_type
+        @action_type ||= "UserAudit"
+      end
+
       # Temporarily turns off auditing while saving.
       def save_without_auditing
         without_auditing { save }
@@ -198,24 +206,29 @@ module Audited
 
       def audit_create
         write_audit(:action => 'create', :audited_changes => audited_attributes,
-                    :comment => audit_comment, :audit_type => self.action_type)
+                    :comment => audit_comment, :audit_type => self.action_type,
+                    :state_change => self.state_change)
       end
 
       def audit_update
         unless (changes = audited_changes).empty? && audit_comment.blank?
           write_audit(:action => 'update', :audited_changes => changes,
-                      :comment => audit_comment, :audit_type => self.action_type)
+                      :comment => audit_comment, :audit_type => self.action_type,
+                    :state_change => self.state_change)
         end
       end
 
       def audit_destroy
         write_audit(:action => 'destroy', :audited_changes => audited_attributes,
-                    :comment => audit_comment, :audit_type => self.action_type)
+                    :comment => audit_comment, :audit_type => self.action_type,
+                    :state_change => self.state_change)
       end
 
       def write_audit(attrs)
         attrs[:associated] = self.send(audit_associated_with) unless audit_associated_with.nil?
         self.audit_comment = nil
+        self.state_change = nil
+        self.action_type = "UserAudit"
         run_callbacks(:audit)  { self.audits.create(attrs) } if auditing_enabled
       end
 
@@ -236,6 +249,7 @@ module Audited
     end # InstanceMethods
 
     module AuditedClassMethods
+
       # Returns an array of columns that are audited. See non_audited_columns
       def audited_columns
         self.columns.select { |c| !non_audited_columns.include?(c.name) }

@@ -12,15 +12,16 @@ module Audited
         belongs_to :admin,      :polymorphic => true
         belongs_to :associated, :polymorphic => true
 
-        before_create :set_version_number, :set_audit_user, :check_audit_type
+        before_create :set_version_number, :set_audit_user, :check_state_change
 
         cattr_accessor :audited_class_names
         self.audited_class_names = Set.new
 
-        attr_accessible :action, :audited_changes, :comment, :associated, :audit_type
+        attr_accessible :action, :audited_changes, :comment, :associated, :audit_type, :state_change
 
-        scope :state_changes, ->{ where( "`audit_type` LIKE '%status%'" ) }
+        scope :state_changes, ->{ where( "`state_change` IS NOT null" ) }
         scope :system_audit, ->{ where( audit_type: "SystemAudit" ) }
+        scope :user_audit, ->{ where( audit_type: "UserAudit" ) }
         scope :as_admin, ->{ where( "`admin_id` IS NOT null AND `admin_type` = 'User'" ) }
       end
 
@@ -104,13 +105,13 @@ module Audited
       nil # prevent stopping callback chains
     end
 
-    # If this is an audit resulting from a state machine transition, mark it as a status change.
-    def check_audit_type
-      return self.audit_type if self.audit_type
+    # If this is an audit resulting from a state machine transition, record the status changed.
+    def check_state_change
+      return self.state_change if self.state_change
 
       changed_attrs = old_attributes.keys.select{|k| k.to_s.match(/status/i)} + new_attributes.keys.select{|k| k.to_s.match(/status/i) }
       if changed_attrs.count > 0
-        self.audit_type = changed_attrs.first.to_s.camelize
+        self.state_change = changed_attrs.first.to_s.camelize
       end
     end
 
