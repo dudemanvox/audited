@@ -44,7 +44,7 @@ module Audited
       def reconstruct_attributes(audits)
         attributes = {}
         result = audits.collect do |audit|
-          attributes.merge!(audit.new_attributes).merge!(:version => audit.version)
+          attributes.merge!(audit.new_attributes).merge!(:version => audit.audit_version)
           yield attributes if block_given?
         end
         block_given? ? result : attributes
@@ -97,7 +97,7 @@ module Audited
         :auditable_id => auditable_id,
         :auditable_type => auditable_type
       ).order(:version.desc).first.try(:version) || 0
-      self.version = max + 1
+      self.audit_version = max + 1
     end
 
     def set_audit_user
