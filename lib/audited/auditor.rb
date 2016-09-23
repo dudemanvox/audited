@@ -69,6 +69,9 @@ module Audited
         attr_accessor :state_change
         attr_writer   :action_type
 
+        # Audited assumes the use of attr_accessible. If the application uses StrongParams, the below block of code will cause issues!
+        # To get around this issue, pass an argument of 'allow_mass_assignment: true' so the attr_accessible will be skipped.
+        # If the model has ANY attr_accessible calls, the same issue will result!
         unless options[:allow_mass_assignment]
           attr_accessible :audit_comment
           attr_accessible :state_change
@@ -82,12 +85,13 @@ module Audited
         before_update :audit_update if !options[:on] || (options[:on] && options[:on].include?(:update))
         before_destroy :audit_destroy if !options[:on] || (options[:on] && options[:on].include?(:destroy))
 
-        # Define and set an after_audit callback. This might be useful if you want
+        # Define and set an after_audit and before_audit callback. This might be useful if you want
         # to notify a party after the audit has been created.
         define_callbacks :audit
         set_callback :audit, :after, :after_audit, :if => lambda { self.respond_to?(:after_audit) }
+        set_callback :audit, :before, :before_audit, :if => lambda { self.respond_to?(:before_audit) }
 
-        attr_accessor :version
+        attr_accessor :audit_version
 
         extend Audited::Auditor::AuditedClassMethods
         include Audited::Auditor::AuditedInstanceMethods
@@ -194,11 +198,11 @@ module Audited
 
       def audits_to(version = nil)
         if version == :previous
-          version = if self.version
-                      self.version - 1
+          version = if self.audit_version
+                      self.audit_version - 1
                     else
                       previous = audits.descending.offset(1).first
-                      previous ? previous.version : 1
+                      previous ? previous.audit_version : 1
                     end
         end
         audits.to_version(version)
