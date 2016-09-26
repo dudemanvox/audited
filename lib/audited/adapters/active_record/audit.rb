@@ -26,12 +26,12 @@ module Audited
         scope :destroys,      :conditions => {:action => 'destroy'}
 
         scope :up_until,      lambda {|date_or_time| where("created_at <= ?", date_or_time) }
-        scope :from_version,  lambda {|version| where(['version >= ?', version]) }
-        scope :to_version,    lambda {|version| where(['version <= ?', version]) }
+        scope :from_version,  lambda {|version| where(['audit_version >= ?', version]) }
+        scope :to_version,    lambda {|version| where(['audit_version <= ?', version]) }
 
         # Return all audits older than the current one.
         def ancestors
-          self.class.where(['auditable_id = ? and auditable_type = ? and version <= ?',
+          self.class.where(['auditable_id = ? and auditable_type = ? and audit_version <= ?',
             auditable_id, auditable_type, version])
         end
 
@@ -56,12 +56,12 @@ module Audited
 
       private
         def set_version_number
-          max = self.class.maximum(:version,
+          max = self.class.maximum(:audit_version,
             :conditions => {
               :auditable_id => auditable_id,
               :auditable_type => auditable_type
             }) || 0
-          self.version = max + 1
+          self.audit_version = max + 1
         end
       end
     end

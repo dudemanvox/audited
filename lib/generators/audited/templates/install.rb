@@ -11,6 +11,9 @@ class <%= migration_class_name %> < ActiveRecord::Migration
       t.column :user_type, :string
       t.column :admin_id, :integer
       t.column :admin_type, :string
+      t.column :route, :string
+      t.column :method, :string
+      t.column :parameters, :text
       t.column :username, :string
       t.column :action, :string
       t.column :audited_changes, :text
