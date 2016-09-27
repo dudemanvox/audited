@@ -19,7 +19,7 @@ module Audited
 
         serialize :audited_changes
 
-        default_scope         order(:version)
+        default_scope         order(:audit_version)
         scope :descending,    reorder("version DESC")
         scope :creates,       :conditions => {:action => 'create'}
         scope :updates,       :conditions => {:action => 'update'}
@@ -32,7 +32,7 @@ module Audited
         # Return all audits older than the current one.
         def ancestors
           self.class.where(['auditable_id = ? and auditable_type = ? and audit_version <= ?',
-            auditable_id, auditable_type, version])
+            auditable_id, auditable_type, audit_version])
         end
 
         # Allows user to be set to either a string or an ActiveRecord object
