@@ -24,7 +24,7 @@ module Audited
         scope :system_audit, ->{ where( audit_type: "SystemAudit" ) }
         scope :user_audit, ->{ where( audit_type: "UserAudit" ) }
         scope :as_admin, ->{ where( "`admin_id` IS NOT null AND `admin_type` = 'User'" ) }
-        scope :activity, ->{ where(audit_atype: "UserMetric") }
+        scope :activity, ->{ where( audit_type: "UserMetric" ) }
       end
 
       # Returns the list of classes that are being audited
