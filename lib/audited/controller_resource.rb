@@ -66,6 +66,7 @@ module Audited
       def audit_params
         {
           audit_type: "UserMetric",
+          associated: current_user,
           user: current_user,
           admin: current_admin,
           route: user_route,
