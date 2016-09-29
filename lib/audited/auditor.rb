@@ -48,6 +48,7 @@ module Audited
         return if self.included_modules.include?(Audited::Auditor::AuditedInstanceMethods)
 
         class_attribute :non_audited_columns,   :instance_writer => false
+        class_attribute :ignore_defaults_on,    :instance_writer => false
         class_attribute :auditing_enabled,      :instance_writer => false
         class_attribute :audit_associated_with, :instance_writer => false
 
@@ -65,8 +66,15 @@ module Audited
           before_destroy :require_comment
         end
 
+        # Check to see if default attribute values should be ignored and on which actions to ignore them.
+        if options[:ignore_defaults_on]
+          self.ignore_defaults_on = options[:ignore_defaults_on]
+        end
+
+
         attr_accessor :audit_comment
         attr_accessor :state_change
+        attr_accessor :crud_action
         attr_writer   :action_type
 
         # Audited assumes the use of attr_accessible. If the application uses StrongParams, the below block of code will cause issues!
@@ -80,6 +88,11 @@ module Audited
 
         has_many :audits, :as => :auditable, :class_name => Audited.audit_class.name
         Audited.audit_class.audited_class_names << self.to_s
+
+        # Store the life cycle state we are about to enter
+        before_create  :set_create
+        before_update  :set_update
+        before_destroy :set_destroy
 
         after_create  :audit_create if !options[:on] || (options[:on] && options[:on].include?(:create))
         before_update :audit_update if !options[:on] || (options[:on] && options[:on].include?(:update))
@@ -156,7 +169,16 @@ module Audited
 
       # List of attributes that are audited.
       def audited_attributes
-        attributes.except(*non_audited_columns)
+        Rails.logger.debug "IGNORED DEFAULTS: #{ignore_defaults_on.inspect}"
+        Rails.logger.debug "ATTRIBUTES 1: #{attributes}"
+        if ignore_defaults_on.nil?
+          return attributes.except(*non_audited_columns)
+        elsif ignore_defaults_on.exclude?(self.crud_action)
+          return attributes.except(*non_audited_columns)
+        elsif ignore_defaults_on.include?(self.crud_action)
+          Rails.logger.debug "ATTRIBUTES 2: #{attributes.except(*non_audited_columns).reject{|k,v| v == self.class.new.attributes[k]}}"
+          attributes.except(*non_audited_columns).reject{|k,v| v == self.class.new.attributes[k]}
+        end
       end
 
       protected
@@ -188,6 +210,13 @@ module Audited
       end
 
       private
+
+      # For each of the actions which triggers an audit, create a method which will store that action.
+      %i(create update destroy).each do |state|
+        define_method("set_#{state}") do
+          self.crud_action = state
+        end
+      end
 
       def audited_changes
         changed_attributes.except(*non_audited_columns).inject({}) do |changes,(attr, old_value)|

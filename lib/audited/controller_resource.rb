@@ -56,9 +56,9 @@ module Audited
           false
         elsif @options == {}
           false
-        elsif @options[:except] && [@options[:except]].flatten.include?(@params[:action].to_sym)
+        elsif (@options[:except] && [@options[:except]].flatten.include?(@params[:action].to_sym)) || (@options[:skip_controller] && [@options[:skip_controller]].flatten.include?(@params[:controller].to_sym))
           true
-        elsif [@options[:only]].flatten.include?(@params[:action].to_sym)
+        elsif (@options[:only] && [@options[:only]].flatten.include?(@params[:action].to_sym))
           false
         end # options check
       end
