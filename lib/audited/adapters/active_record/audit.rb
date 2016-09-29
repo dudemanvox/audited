@@ -35,6 +35,17 @@ module Audited
             auditable_id, auditable_type, audit_version])
         end
 
+        # Return all audits newer than the current one.
+        def descendants
+          self.class.where(['auditable_id = ? and auditable_type = ? and audit_version >= ?',
+            auditable_id, auditable_type, audit_version])
+        end
+
+        # Return the chain of audits resulting from a user's activity.
+        def results
+          self.class.where(['audit_type in (?) and id > ? and id < ?', ["UserAudit", "SystemAudit"], id, self.class.select(:id).where(['audit_type not in (?) and id > ?', ["UserAudit", "SystemAudit"], id ]).limit(1)])
+        end
+
         # Allows user to be set to either a string or an ActiveRecord object
         # @private
         def user_as_string=(user)
