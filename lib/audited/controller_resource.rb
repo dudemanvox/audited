@@ -71,7 +71,7 @@ module Audited
           admin: current_admin,
           route: user_route,
           method: @controller.try(:request).try(:method),
-          parameters: @controller.params,
+          parameters: @controller.params.to_s,
           remote_address: @controller.try(:request).try(:ip)
         }
       end
