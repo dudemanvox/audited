@@ -12,7 +12,8 @@ module Audited
         belongs_to :admin,      :polymorphic => true
         belongs_to :associated, :polymorphic => true
 
-        before_create :set_version_number, :set_audit_user, :check_state_change
+        before_create :set_version_number, unless: ->(a) { a.audit_type == 'UserMetric' }
+        before_create :set_audit_user, :check_state_change
 
         cattr_accessor :audited_class_names
         self.audited_class_names = Set.new
